@@ -1,28 +1,24 @@
 #!/usr/bin/env python3
-"""Write the 23 Nov 2026 front-page image to /output/entry.png.
+"""Decode the entry image for the make.fun news-image-20261123 bounty.
 
-The PNG bytes live in entry.png.b64 next to this script, so the
-repository holds text only. Decoding is offline and deterministic:
-the same input always yields the same output bytes.
+Reads entry.png.b64 next to this script, decodes the base64 payload,
+and writes the PNG bytes to /output/entry.png. The source file is
+located relative to this script, so the working directory does not matter.
 """
-
 import base64
-import os
+from pathlib import Path
 
-# Resolve paths from this file so the script works from any cwd,
-# including the harness runner's working directory.
-BASE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(BASE, "entry.png.b64")
-OUT = "/output/entry.png"
+HERE = Path(__file__).resolve().parent
+SRC = HERE / "entry.png.b64"
+DST = Path("/output/entry.png")
 
 
-def main():
-    with open(SRC, "rb") as handle:
-        blob = base64.b64decode(handle.read())
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with open(OUT, "wb") as handle:
-        handle.write(blob)
-    os.chmod(OUT, 0o644)
+def main() -> None:
+    encoded = SRC.read_text(encoding="ascii").strip()
+    # Strip any stray whitespace/newlines so decoding is strict and clean.
+    png_bytes = base64.b64decode(encoded, validate=True)
+    DST.parent.mkdir(parents=True, exist_ok=True)
+    DST.write_bytes(png_bytes)
 
 
 if __name__ == "__main__":
